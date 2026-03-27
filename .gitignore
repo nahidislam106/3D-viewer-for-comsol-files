@@ -1,0 +1,75 @@
+# -----------------------------
+# OS / Editor
+# -----------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# -----------------------------
+# Git / local metadata
+# -----------------------------
+*.log
+*.tmp
+*.temp
+
+# -----------------------------
+# Python
+# -----------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+
+# Virtual environments
+.venv/
+venv/
+env/
+backend/.venv/
+backend/env/
+
+# -----------------------------
+# Node / Next.js
+# -----------------------------
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+out/
+frontend/out/
+
+# Build outputs
+frontend/dist/
+dist/
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# -----------------------------
+# Project runtime data
+# -----------------------------
+backend/data/uploads/
+backend/data/processed/
+backend/data/meta/
+
+# Keep directory structure when needed
+!backend/data/uploads/.gitkeep
+!backend/data/processed/.gitkeep
+!backend/data/meta/.gitkeep
+
+# -----------------------------
+# Misc
+# -----------------------------
+*.sqlite3
+*.db
