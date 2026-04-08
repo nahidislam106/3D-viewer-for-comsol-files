@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Callable
 from typing import Any
 
 import numpy as np
@@ -10,6 +11,7 @@ import pyvista as pv
 from app.services.storage import processed_path
 
 logger = logging.getLogger(__name__)
+ProgressCallback = Callable[[int, str], None]
 
 
 def _array_stats(values: np.ndarray) -> dict[str, float] | None:
@@ -59,11 +61,20 @@ def _collect_scalars(mesh: pv.DataSet) -> list[dict[str, Any]]:
     return scalars
 
 
-def convert_to_vtp(file_id: str, source_path: Path) -> dict[str, Any]:
+def convert_to_vtp(
+    file_id: str,
+    source_path: Path,
+    progress_callback: ProgressCallback | None = None,
+) -> dict[str, Any]:
+    def emit(percent: int, message: str) -> None:
+        if progress_callback is not None:
+            progress_callback(percent, message)
+
     suffix = source_path.suffix.lower()
     logger.info(f"[{file_id}] Starting conversion: {source_path.name} (suffix={suffix}, size={source_path.stat().st_size} bytes)")
 
     if suffix == ".mph":
+        emit(100, "Done")
         logger.warning(f"[{file_id}] .mph is proprietary format; returning pending_conversion")
         return {
             "status": "pending_conversion",
@@ -75,15 +86,19 @@ def convert_to_vtp(file_id: str, source_path: Path) -> dict[str, Any]:
         raise ValueError("Unsupported file type. Use .mph, .vtk, .vtu, or .vtp")
 
     try:
+        emit(10, "Reading file...")
         logger.info(f"[{file_id}] Reading mesh with PyVista...")
         mesh = pv.read(source_path)
         logger.info(f"[{file_id}] Mesh loaded: {mesh.n_points} points, {mesh.n_cells} cells")
 
+        emit(40, "Converting to VTP...")
         logger.info(f"[{file_id}] Extracting and triangulating surface...")
+        emit(70, "Extracting surface...")
         surface = mesh.extract_surface().triangulate()
         logger.info(f"[{file_id}] Surface ready: {surface.n_points} points, {surface.n_cells} cells")
 
         target_path = processed_path(file_id, ".vtp")
+        emit(90, "Saving output...")
         logger.info(f"[{file_id}] Saving to {target_path}...")
         surface.save(target_path)
         logger.info(f"[{file_id}] Saved successfully; file size: {target_path.stat().st_size} bytes")
@@ -94,6 +109,7 @@ def convert_to_vtp(file_id: str, source_path: Path) -> dict[str, Any]:
 
         scalars = _collect_scalars(surface)
         logger.info(f"[{file_id}] Conversion complete; found {len(scalars)} scalar fields")
+        emit(100, "Done")
 
         return {
             "status": "ready",

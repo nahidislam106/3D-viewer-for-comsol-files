@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Manrope, IBM_Plex_Mono } from "next/font/google";
+import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 
 import "./globals.css";
 
-const manrope = Manrope({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-sans",
 });
@@ -26,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${manrope.variable} ${plexMono.variable}`}>{children}</body>
+      <body className={`${spaceGrotesk.variable} ${plexMono.variable}`}>{children}</body>
     </html>
   );
 }

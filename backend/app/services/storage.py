@@ -11,10 +11,11 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data"
 UPLOAD_DIR = DATA_DIR / "uploads"
+UPLOAD_TMP_DIR = UPLOAD_DIR / "tmp"
 PROCESSED_DIR = DATA_DIR / "processed"
 META_DIR = DATA_DIR / "meta"
 
-for directory in (UPLOAD_DIR, PROCESSED_DIR, META_DIR):
+for directory in (UPLOAD_DIR, UPLOAD_TMP_DIR, PROCESSED_DIR, META_DIR):
     directory.mkdir(parents=True, exist_ok=True)
 
 
@@ -23,18 +24,44 @@ def new_file_id() -> str:
 
 
 def save_upload(file_id: str, filename: str, content: bytes) -> Path:
-    suffix = Path(filename).suffix.lower()
-    stored_path = UPLOAD_DIR / f"{file_id}{suffix}"
+    stored_path = upload_path(file_id, filename)
     stored_path.write_bytes(content)
     return stored_path
 
 
 def save_upload_stream(file_id: str, filename: str, stream: BinaryIO) -> Path:
-    suffix = Path(filename).suffix.lower()
-    stored_path = UPLOAD_DIR / f"{file_id}{suffix}"
+    stored_path = upload_path(file_id, filename)
     with stored_path.open("wb") as out_file:
         shutil.copyfileobj(stream, out_file, length=1024 * 1024)
     return stored_path
+
+
+def upload_path(file_id: str, filename: str) -> Path:
+    safe_name = Path(filename).name
+    return UPLOAD_DIR / f"{file_id}_{safe_name}"
+
+
+def upload_tmp_path(file_id: str) -> Path:
+    return UPLOAD_TMP_DIR / file_id
+
+
+def find_upload_path(file_id: str, meta: dict[str, Any] | None = None) -> Path | None:
+    if meta is not None:
+        stored_name = str(meta.get("stored_filename") or "").strip()
+        if stored_name:
+            candidate = UPLOAD_DIR / stored_name
+            if candidate.exists():
+                return candidate
+
+    prefixed = sorted(UPLOAD_DIR.glob(f"{file_id}_*"))
+    if prefixed:
+        return prefixed[0]
+
+    legacy = sorted(UPLOAD_DIR.glob(f"{file_id}.*"))
+    if legacy:
+        return legacy[0]
+
+    return None
 
 
 def processed_path(file_id: str, suffix: str = ".vtp") -> Path:
